@@ -2,7 +2,7 @@
   "manifest_version": 1,
   "id": "ux-proto",
   "name": "UX-Proto",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Agent-piloted visual prototyping \u2014 write real HTML/CSS/JS + a mock Python backend per project, with live hot-reload, driven entirely via MCP tools.",
   "icon": "layout-template",
   "tier": "container",
