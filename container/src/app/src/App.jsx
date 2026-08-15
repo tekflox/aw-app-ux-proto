@@ -26,20 +26,14 @@ export default function App() {
 }
 
 function ProjectFrame({ slug, onBack }) {
-  // Real isolation (Architect finding #2 on Kanban 39e5bf3b...): this MUST
-  // be an absolute URL on the project's own subdomain
-  // (ux-proto--<slug>.app.{AW_DOMAIN}, routed by caddy_template.py's
-  // wildcard_children matcher straight to this same app). A relative path
-  // on the shell's own origin would make allow-same-origin below mean
-  // "same origin as the DASHBOARD" — a broken prototype could then reach
-  // window.parent/DOM/localStorage/cookies of the shell itself. Flipping
-  // the src to absolute and adding allow-same-origin only happen together;
-  // separately either one is wrong (opaque + same-origin-with-shell, or a
-  // same-origin flag that isn't actually enforcing project isolation).
-  // location.hostname is ux-proto.app.{AW_DOMAIN}; dropping the leading
-  // "ux-proto" label leaves "app.{AW_DOMAIN}" already — don't prepend
-  // another "app." or it double-counts (ux-proto--x.app.app.{domain}).
-  const origin = `${window.location.protocol}//ux-proto--${slug}.${window.location.hostname.split('.').slice(1).join('.')}`
+  // Same-origin, path-based project view (/p/<slug>/_frame/), proxied to the
+  // backend by vite.config.js. In the aw-workspace this app is served from a
+  // single origin with no per-project subdomain routing, so the isolated
+  // ux-proto--<slug>.app.{AW_DOMAIN} scheme (the monolith's) isn't reachable
+  // here — the project renders inline, right in the workspace window. The
+  // `allow-same-origin` sandbox flag below therefore means same-origin as the
+  // shell (accepted trade-off for the workspace; per-project subdomain
+  // isolation is a documented future item).
   const [snapshots, setSnapshots] = useState([])
   const [version, setVersion] = useState(null) // null = not loaded yet, don't render the iframe with a guessed src
   const [saving, setSaving] = useState(false)
@@ -89,7 +83,7 @@ function ProjectFrame({ slug, onBack }) {
 
   if (version === null) return <div className="h-screen bg-black" />
 
-  const frameSrc = version === 'latest' ? `${origin}/_frame/` : `${origin}/_frame/v/${version}/`
+  const frameSrc = version === 'latest' ? `/p/${slug}/_frame/` : `/p/${slug}/_frame/v/${version}/`
 
   return (
     <div className="h-screen flex flex-col bg-black">
@@ -342,7 +336,10 @@ function Dashboard({ onOpen }) {
           {projects.map((p) => (
             <div
               key={p.id}
-              className="group rounded-xl p-4 border border-white/10 bg-gradient-to-br from-neutral-900 to-neutral-950 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-950/30 transition-all"
+              onClick={() => p.status === 'active' && onOpen(p.slug)}
+              className={`group rounded-xl p-4 border border-white/10 bg-gradient-to-br from-neutral-900 to-neutral-950 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-950/30 transition-all ${
+                p.status === 'active' ? 'cursor-pointer' : ''
+              }`}
             >
               <div className="flex items-start justify-between">
                 <button
@@ -369,20 +366,20 @@ function Dashboard({ onOpen }) {
                 </span>
               </div>
               <a
-                href={p.public_url}
+                href={`/p/${p.slug}/_frame/`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="block text-xs text-indigo-400/80 hover:text-indigo-300 hover:underline mt-1 truncate"
               >
-                {p.public_url}
+                Abrir em nova aba ↗
               </a>
               <div className="flex items-center justify-between mt-4">
                 <span className="text-[11px] text-neutral-600">
                   {p.status === 'deleted' ? 'deleted' : `edited ${new Date(p.updated_at).toLocaleString()}`}
                 </span>
                 <button
-                  onClick={() => toggleDelete(p)}
+                  onClick={(e) => { e.stopPropagation(); toggleDelete(p) }}
                   className={
                     p.status === 'active'
                       ? 'text-xs px-2.5 py-1 rounded-md border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 transition-colors'
