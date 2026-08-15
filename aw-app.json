@@ -22,6 +22,7 @@
     }
   },
   "permissions": [
+    "containers:manage",
     "net:outbound",
     "fs:workspace-data"
   ],
