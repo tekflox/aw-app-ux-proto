@@ -1,0 +1,54 @@
+{
+  "manifest_version": 1,
+  "id": "ux-proto",
+  "name": "UX-Proto",
+  "version": "0.1.0",
+  "description": "Agent-piloted visual prototyping — write real HTML/CSS/JS + a mock Python backend per project, with live hot-reload, driven entirely via MCP tools.",
+  "icon": "layout-template",
+  "tier": "container",
+  "requires_ui_refresh": true,
+  "publisher": "TekFlox",
+  "resource_estimate": {
+    "cpu": "medium",
+    "memory": "~800 MB",
+    "disk": "~1.5 GB"
+  },
+  "runtime": {
+    "image": "ghcr.io/tekflox/aw-app-ux-proto:latest",
+    "port": 10021,
+    "resources": {
+      "cpus": 1,
+      "mem_mb": 1536
+    }
+  },
+  "permissions": [
+    "net:outbound",
+    "fs:workspace-data"
+  ],
+  "contributes": {
+    "windows": [
+      {
+        "id": "ux-proto.main",
+        "title": "UX-Proto",
+        "icon": "layout-template",
+        "body": {
+          "type": "managed_app",
+          "kind": "iframe",
+          "path": "/"
+        }
+      }
+    ]
+  },
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "auto_start": {
+        "type": "boolean",
+        "default": true,
+        "title": "Auto-start",
+        "description": "Start this app automatically when the workspace starts."
+      }
+    },
+    "required": []
+  }
+}
