@@ -6,7 +6,8 @@
       "command": "python3",
       "args": [
         "mcp/aw_ux_proto.py"
-      ]
+      ],
+      "cwd_app_dir": true
     }
   }
 }

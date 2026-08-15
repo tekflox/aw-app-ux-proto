@@ -10,7 +10,7 @@
   "publisher": "TekFlox",
   "resource_estimate": {
     "cpu": "medium",
-    "memory": "~800 MB",
+    "memory": "~1 GB",
     "disk": "~1.5 GB"
   },
   "runtime": {
@@ -18,8 +18,18 @@
     "port": 10021,
     "resources": {
       "cpus": 1,
-      "mem_mb": 1536
-    }
+      "mem_mb": 2048
+    },
+    "env": {
+      "PGDATA": "/data/pgdata"
+    },
+    "volumes": [
+      {
+        "source": "$AW_APP_DATA",
+        "target": "/data",
+        "mode": "rw"
+      }
+    ]
   },
   "permissions": [
     "containers:manage",

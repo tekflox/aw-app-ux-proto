@@ -13,9 +13,12 @@
 # Published by .github/workflows/build.yml as ghcr.io/tekflox/aw-app-ux-proto:latest.
 FROM python:3.13-slim
 
-# System deps — git for any pip-from-git, curl for healthchecks, nodejs for Vite.
+# System deps — git for any pip-from-git, curl for healthchecks, nodejs for
+# Vite, and postgresql for the app's own bundled database (one-container-per-app
+# Tier-2 model, same as aw-app-kb — the backend connects to 127.0.0.1:5432,
+# which is exactly UX-Proto's default DB URL). No separate companion container.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl ca-certificates build-essential \
+    git curl ca-certificates build-essential postgresql postgresql-client \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
