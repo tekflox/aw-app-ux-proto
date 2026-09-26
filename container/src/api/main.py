@@ -56,6 +56,14 @@ app.add_middleware(
 
 AW_DOMAIN = os.environ.get("AW_DOMAIN", "aw.tekflox.com")
 
+# Decoupled-apps workspace identity (see aw-workspace's src/apps/containers.py
+# ::app_public_url and src/api/workspace_url.py). AW_WORKSPACE_SLUG is
+# injected into every Tier-2 container unconditionally by ContainerSupervisor;
+# AW_WORKSPACE_BASE_DOMAIN mirrors workspace_url.py's own default so this
+# container never needs it explicitly set to compute a reachable URL.
+AW_WORKSPACE_SLUG = os.environ.get("AW_WORKSPACE_SLUG", "")
+AW_WORKSPACE_BASE_DOMAIN = os.environ.get("AW_WORKSPACE_BASE_DOMAIN", "workspace.aw.tekflox.com")
+
 supervisor = BackendSupervisor()
 
 # slug -> set[WebSocket], only for browsers with that project open (/p/<slug>)
@@ -114,15 +122,22 @@ class _CreateIn(BaseModel):
 
 
 def _project_url(slug: str, version: str = projects_fs.LATEST) -> str:
-    # Bare root on the child subdomain — Caddy rewrites "/" to "/_frame/"
-    # before it ever reaches Vite (see caddy_template.py wildcard_children),
-    # so a real user pasting/typing this exact URL lands on the project,
-    # not the dashboard SPA's index.html. A non-latest selected_version
-    # points straight at its path-based /v/<N>/ route instead — see
-    # set_selected_version for why this is persisted per-project rather
-    # than only ever reflecting latest.
-    base = f"https://ux-proto--{slug}.app.{AW_DOMAIN}"
-    return f"{base}/" if version == projects_fs.LATEST else f"{base}/_frame/v/{version}/"
+    # The monolith's child-subdomain scheme (ux-proto--<slug>.app.{AW_DOMAIN})
+    # has no equivalent yet in the decoupled-apps framework — runtime.py's
+    # AppRuntime._attach_mount only mounts the app's own host
+    # (<app_id>.app.<ws>.<base_domain>), not a per-entity child host (see
+    # docs/architecture/app-subdomain.md's Layer 2 "gap for child
+    # subdomains" — designed, not implemented). Building that is a platform-
+    # level routing change, not this app's fix, so this uses the
+    # already-working path-based route on the app's own host instead —
+    # same content, same hot-reload WS (slug is a path param there too).
+    if AW_WORKSPACE_SLUG:
+        base = f"https://ux-proto.app.{AW_WORKSPACE_SLUG}.{AW_WORKSPACE_BASE_DOMAIN}/p/{slug}"
+    else:
+        # No decoupled-apps workspace identity available (e.g. local/monolith
+        # run) — fall back to the legacy child-subdomain scheme.
+        base = f"https://ux-proto--{slug}.app.{AW_DOMAIN}"
+    return f"{base}/_frame/" if version == projects_fs.LATEST else f"{base}/_frame/v/{version}/"
 
 
 def _serialize(row: dict) -> dict:
