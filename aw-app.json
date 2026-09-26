@@ -44,7 +44,7 @@
         "icon": "layout-template",
         "body": {
           "type": "managed_app",
-          "kind": "iframe",
+          "kind": "web",
           "path": "/"
         }
       }
