@@ -117,7 +117,15 @@ def ensure_schema() -> None:
 
 
 def get_conn() -> psycopg.Connection:
-    return psycopg.connect(_DB_URL, row_factory=psycopg.rows.dict_row)
+    # Force UTF8 on every connection: entrypoint.sh's `initdb` runs with no
+    # --encoding/--locale under an empty-locale base image, which silently
+    # lands the cluster on SQL_ASCII. Under that negotiated encoding,
+    # psycopg's TextLoader refuses to decode TEXT/VARCHAR and returns raw
+    # bytes instead of str (e.g. b'active' != 'active' in _require_project).
+    # Safe for already-provisioned data too: psycopg3's str dumper already
+    # writes UTF-8 bytes on an ascii-encoding connection, so every string
+    # ever written through this module is already valid UTF-8 on disk.
+    return psycopg.connect(_DB_URL, row_factory=psycopg.rows.dict_row, options="-c client_encoding=UTF8")
 
 
 def init() -> None:

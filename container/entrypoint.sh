@@ -15,7 +15,14 @@ mkdir -p "$PGDATA" /data/projects
 chown -R postgres:postgres "$PGDATA" /data
 if [ ! -s "$PGDATA/PG_VERSION" ]; then
     # First boot: initialize the cluster as the postgres system user.
-    su postgres -c "$PG_BIN/initdb -D '$PGDATA' --auth-local=trust --auth-host=trust"
+    # --encoding/--locale pinned explicitly: this image has no locale data
+    # installed, so LANG/LC_ALL are empty and initdb would otherwise
+    # silently default the cluster to SQL_ASCII — under which psycopg's
+    # TextLoader refuses to decode TEXT columns and returns raw bytes
+    # instead of str (see db.py's get_conn(), which also forces
+    # client_encoding=UTF8 per-connection as the belt to this suspenders).
+    # C.UTF-8 needs no locale-gen/extra package on this base image.
+    su postgres -c "$PG_BIN/initdb -D '$PGDATA' --auth-local=trust --auth-host=trust --encoding=UTF8 --locale=C.UTF-8"
 fi
 # Listen only on loopback (the backend is the only client) and start.
 su postgres -c "$PG_BIN/pg_ctl -D '$PGDATA' -o \"-c listen_addresses='127.0.0.1' -p 5432\" -w -t 60 start"

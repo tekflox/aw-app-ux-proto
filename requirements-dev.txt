@@ -1,0 +1,6 @@
+# Installed by the shared release workflow (tekflox/aw-marketplace's
+# app-release.yml) on top of its own fixed pytest/jsonschema/fastapi/httpx/
+# uvicorn set, before running `pytest tests/`. tests/test_db_encoding.py
+# imports psycopg directly (it exercises db.py's real connection behaviour
+# against a real throwaway Postgres), which that fixed set doesn't include.
+psycopg[binary]==3.2.3
